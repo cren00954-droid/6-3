@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>クラス限定！詳細プロフ＆質問SNS</title>
     <style>
-        /* 簡単なデザイン（あとでいくらでも変えられます） */
         body { font-family: sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
         .container { max-width: 600px; margin: 0 auto; }
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
@@ -14,7 +13,10 @@
         input, textarea { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; }
         button { background: #1877f2; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-size: 16px; margin-top: 15px; width: 100%; }
         button:hover { background: #166fe5; }
-        .profile-list { margin-top: 20px; }
+        .profile-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; position: relative; }
+        .status-badge { background: #e4e6eb; padding: 3px 8px; border-radius: 20px; font-size: 12px; font-weight: bold; display: inline-block; margin-bottom: 10px; }
+        .q-box { background: #f0f2f5; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 14px; }
+        .notification-dot { position: absolute; top: 15px; right: 15px; background: red; color: white; border-radius: 50%; width: 20px; height: 20px; text-align: center; font-size: 12px; line-height: 20px; font-weight: bold; display: none; }
     </style>
 </head>
 <body>
@@ -22,7 +24,6 @@
 <div class="container">
     <h1>🏫 クラス専用プロフ帳</h1>
     
-    <!-- プロフィール登録フォーム -->
     <div class="card">
         <h2>自分のプロフを投稿する</h2>
         <form id="profileForm">
@@ -30,25 +31,130 @@
             <input type="text" id="name" placeholder="例：たなか" required>
 
             <label>詳しい自己紹介・推し語り</label>
-            <textarea id="bio" rows="4" placeholder="例：ボカロとゲームが好きです！最近は〇〇にハマってます..." required></textarea>
+            <textarea id="bio" rows="4" placeholder="例：ボカロとゲームが好きです！" required></textarea>
 
             <label>MBTI</label>
             <input type="text" id="mbti" placeholder="例：INFP">
 
             <label>今のステータス</label>
-            <input type="text" id="status" placeholder="例：テスト勉強中、ひま、話しかけてOK">
+            <input type="text" id="status" placeholder="例：テスト勉強中、ひま">
 
             <button type="submit">プロフを公開する</button>
         </form>
     </div>
 
-    <!-- みんなのプロフが表示される場所 -->
     <h2>みんなのプロフ一覧</h2>
-    <div id="profileList" class="profile-list">
-        <!-- ここに投稿されたプロフが追加されていきます -->
-        <p style="color: #666;">（まだ投稿がありません。バックエンドを繋ぐとここに表示されるようになります！）</p>
-    </div>
+    <div id="profileList"></div>
 </div>
 
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // あなたのFirebase設定
+    const firebaseConfig = {
+        apiKey: "AIzaSyCC878BE_Ka46rCKUB72MEKdWNf3IyF_4Q",
+        authDomain: "a-2be49.firebaseapp.com",
+        projectId: "a-2be49",
+        storageBucket: "a-2be49.firebasestorage.app",
+        messagingSenderId: "688287200808",
+        appId: "1:688287200808:web:6d86f77f9baf38496c271d"
+    };
+
+    // Firebaseの初期化
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // プロフ投稿の処理
+    document.getElementById('profileForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const name = document.getElementById('name').value;
+        const bio = document.getElementById('bio').value;
+        const mbti = document.getElementById('mbti').value;
+        const status = document.getElementById('status').value;
+
+        try {
+            await addDoc(collection(db, "profiles"), {
+                name: name,
+                bio: bio,
+                mbti: mbti,
+                status: status,
+                questions: [], // 質問をストックする配列
+                hasNewQuestion: false, // 通知用のフラグ
+                createdAt: new Date()
+            });
+            alert("プロフを公開しました！");
+            document.getElementById('profileForm').reset();
+        } catch (error) {
+            console.error("エラーが発生しました: ", error);
+        }
+    });
+
+    // データのリアルタイム読み込みと表示
+    onSnapshot(collection(db, "profiles"), (snapshot) => {
+        const profileList = document.getElementById('profileList');
+        profileList.innerHTML = ''; // 一度クリア
+
+        snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            const id = docSnap.id;
+
+            // 質問のリストを生成
+            let questionsHtml = '';
+            if (data.questions && data.questions.length > 0) {
+                data.questions.forEach(q => {
+                    questionsHtml += `<div class="q-box">💬 <b>質問:</b> ${q}</div>`;
+                });
+            }
+
+            // 新着質問がある場合の通知バッジの表示設定
+            const displayNotification = data.hasNewQuestion ? 'block' : 'none';
+
+            // プロフカードのHTML
+            const card = document.createElement('div');
+            card.className = 'profile-card';
+            card.innerHTML = `
+                <div class="notification-dot" id="dot-${id}" style="display: ${displayNotification}">!</div>
+                <h3>${data.name} <span style="font-size:14px; color:#666;">(${data.mbti || '未設定'})</span></h3>
+                <div class="status-badge">📢 ${data.status || '特になし'}</div>
+                <p style="white-space: pre-wrap;">${data.bio}</p>
+                <hr>
+                <h4>質問する</h4>
+                <input type="text" id="input-${id}" placeholder="匿名で質問を入力...">
+                <button onclick="sendQuestion('${id}')" style="margin-top:5px; padding:5px; font-size:14px;">質問を送信</button>
+                <button onclick="clearNotification('${id}')" style="margin-top:5px; padding:5px; font-size:14px; background:#666;">通知を消す</button>
+                <div style="margin-top:15px;">
+                    <h5>届いた質問一覧</h5>
+                    ${questionsHtml || '<p style="font-size:12px; color:#999;">まだ質問はありません</p>'}
+                </div>
+            `;
+            profileList.appendChild(card);
+        });
+    });
+
+    // 質問を送信する関数（グローバルに公開）
+    window.sendQuestion = async (id) => {
+        const inputEl = document.getElementById(`input-${id}`);
+        const questionText = inputEl.value;
+        if (!questionText) return;
+
+        const docRef = doc(db, "profiles", id);
+        await updateDoc(docRef, {
+            questions: arrayUnion(questionText),
+            hasNewQuestion: true // 新着アリにして通知を点灯させる
+        });
+
+        inputEl.value = '';
+    };
+
+    // 通知を既読にする関数
+    window.clearNotification = async (id) => {
+        const docRef = doc(db, "profiles", id);
+        await updateDoc(docRef, {
+            hasNewQuestion: false // 通知を消す
+        });
+    };
+</script>
 </body>
 </html>
