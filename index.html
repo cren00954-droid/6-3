@@ -1,1 +1,54 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>クラス限定！詳細プロフ＆質問SNS</title>
+    <style>
+        /* 簡単なデザイン（あとでいくらでも変えられます） */
+        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h1, h2 { color: #1877f2; }
+        label { display: block; margin-top: 10px; font-weight: bold; }
+        input, textarea { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; }
+        button { background: #1877f2; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-size: 16px; margin-top: 15px; width: 100%; }
+        button:hover { background: #166fe5; }
+        .profile-list { margin-top: 20px; }
+    </style>
+</head>
+<body>
 
+<div class="container">
+    <h1>🏫 クラス専用プロフ帳</h1>
+    
+    <!-- プロフィール登録フォーム -->
+    <div class="card">
+        <h2>自分のプロフを投稿する</h2>
+        <form id="profileForm">
+            <label>名前（ニックネーム可）</label>
+            <input type="text" id="name" placeholder="例：たなか" required>
+
+            <label>詳しい自己紹介・推し語り</label>
+            <textarea id="bio" rows="4" placeholder="例：ボカロとゲームが好きです！最近は〇〇にハマってます..." required></textarea>
+
+            <label>MBTI</label>
+            <input type="text" id="mbti" placeholder="例：INFP">
+
+            <label>今のステータス</label>
+            <input type="text" id="status" placeholder="例：テスト勉強中、ひま、話しかけてOK">
+
+            <button type="submit">プロフを公開する</button>
+        </form>
+    </div>
+
+    <!-- みんなのプロフが表示される場所 -->
+    <h2>みんなのプロフ一覧</h2>
+    <div id="profileList" class="profile-list">
+        <!-- ここに投稿されたプロフが追加されていきます -->
+        <p style="color: #666;">（まだ投稿がありません。バックエンドを繋ぐとここに表示されるようになります！）</p>
+    </div>
+</div>
+
+</body>
+</html>
